@@ -8,6 +8,7 @@ class Server:
         self.ipv4_address = "192.168.1.2"
         self.port = 6667
         self.command_prefix = "!"
+        self.server_name = "UoD_IRCServer"
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -32,17 +33,6 @@ class Server:
 
     def create_channel(self):
         pass
-
-class ServerChannel:
-
-    def __init__(self):
-        pass
-
-
-class ServerClient:
-
-     def __init__(self):
-         pass
     
 server = Server()
 server.start_server()
