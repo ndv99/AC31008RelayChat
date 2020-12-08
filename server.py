@@ -36,11 +36,6 @@ class Server:
                     self.accept_connection(key.fileobj)
                 else:
                     self.service_connection(key, mask)
-
-                # data = client_socket.recv(1024)
-                # if not data:
-                #     break
-                # client_socket.sendall(data)
     
     def accept_connection(self, new_socket):
         client_socket, client_address = new_socket.accept()
@@ -57,7 +52,7 @@ class Server:
         data = key.data
 
         if mask & selectors.EVENT_READ:
-            data_received = connection_socket.recv(1024)  # Should be ready to read
+            data_received = connection_socket.recv(1024)
             if data_received:
                 data.outb += data_received
             else:
@@ -68,7 +63,7 @@ class Server:
         if mask & selectors.EVENT_WRITE:
             if data.outb:
                 print("Echoing: ", repr(data.outb), " to ", data.addr)
-                sent = connection_socket.send(data.outb)  # Should be ready to write
+                sent = connection_socket.send(data.outb)
                 data.outb = data.outb[sent:]
 
     def send_to_server(self):
