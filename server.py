@@ -5,7 +5,18 @@ import select
 class Server:
 
     def __init__(self):
-        pass
+        self.ipv4_address = "192.168.1.2"
+        self.port = 6667
+        self.command_prefix = "!"
+
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind((self.ipv4_address, self.port))
+
+        self.socket.listen()
+        self.socket_list = [self.socket]
+        self.clients = []
+        self.channels = []
 
     def start_server(self):
         pass
