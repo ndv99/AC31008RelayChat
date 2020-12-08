@@ -9,7 +9,6 @@ class Client:
         self.host_name = "127.0.0.1"
         self.port = 6667
         self.client_socket = None
-        pass
 
     def client_test_method(self):
         print("This is a test from the 'Client' class.")
