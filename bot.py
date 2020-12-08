@@ -2,14 +2,11 @@ import socket
 import random
 import sys
 import string
-from datetime import datetime
+import client
 
-class Bot:
+class Bot(client.Client):
 
     def __init__(self):
-        pass
-
-    def connect(self):
         pass
 
     def listen(self):
@@ -21,10 +18,14 @@ class Bot:
     def reply(self):
         pass
 
-    def say(self):
-        pass
-
     def parse_server_data(self):
         pass
+    
+    def bot_test_method(self):
+        print("This is a test from the 'Bot' class.")
 
 print("This is the bot file.")
+
+bot = Bot()
+bot.client_test_method()
+bot.bot_test_method()
