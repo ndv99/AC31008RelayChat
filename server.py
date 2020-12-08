@@ -75,6 +75,7 @@ class Server:
     def create_channel(self):
         pass
     
-server = Server()
-server.start_server()
-server.receive()
+if __name__ == "__main__":
+    server = Server()
+    server.start_server()
+    server.receive()

@@ -27,5 +27,6 @@ class Client:
     def join_channel(self):
         pass
 
-client = Client()
-client.connect_to_server(SERVER_HOSTNAME, SERVER_PORT)
+if __name__ == "__main__":
+    client = Client()
+    client.connect_to_server(SERVER_HOSTNAME, SERVER_PORT)

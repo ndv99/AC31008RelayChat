@@ -26,6 +26,7 @@ class Bot(client.Client):
 
 print("This is the bot file.")
 
-bot = Bot()
-bot.client_test_method()
-bot.bot_test_method()
+if __name__ == "__main__":
+    bot = Bot()
+    bot.client_test_method()
+    bot.bot_test_method()
