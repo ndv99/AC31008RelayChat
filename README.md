@@ -6,3 +6,6 @@ The code for the final networks assignment - a basic client and a simplified ser
 2. Create a virtual environment on this folder with `py -m venv AC31008RelayChat`
 3. Enter the virtual environment using the `activate` script in \Scripts: `Scripts\activate`
 4. Use `pip` to install the bot's requirements: `pip install -r requirements.txt`
+
+## example sections
+This is an example.
