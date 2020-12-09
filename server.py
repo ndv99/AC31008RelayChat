@@ -42,7 +42,7 @@ class Server:
                     self.service_connection(key, mask)
     
     def accept_connection(self, new_socket):
-        """Accepst a connection from a client.
+        """Accepts a connection from a client.
         
         Args:
             new_socket (SelectorKey.fileobj): The socket of the client to connect to.
