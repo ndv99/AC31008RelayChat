@@ -29,7 +29,7 @@ class Server:
 
         print(f"'{self.server_name}' is now running on {self.ipv4_address}:{self.port}.")
 
-    def receive(self):
+    def event_loop(self):
         """Waits to receive messages from clients."""
         self.socket.listen()
         print("Waiting for client...")
@@ -40,14 +40,15 @@ class Server:
             for notif_socket in read_sockets:
                 if notif_socket == self.socket:
                     client_sckt, client_addr = self.socket.accept()
-                    user = self.receive_message(client_sckt)
+                    usr = self.receive_message(client_sckt)
 
-                    if user is False:
+                    if usr is False:
                         continue
 
-                    self.socket_list.appen(client_sckt)
-                    self.clients[client_sckt] = user
-                    print(f"{user['data'].decode('utf-8')} has connected to the server via {client_addr}")
+                    self.socket_list.append(client_sckt)
+                    self.clients[client_sckt] = usr
+                    username = usr['data'].decode('utf-8')
+                    print(f"{username} has connected to the server.")
 
                 else:
                     msg = self.receive_message(notif_socket)
@@ -58,10 +59,11 @@ class Server:
                         continue
                     
                     user = self.clients[notif_socket]
-                    username = user["data"].decode("utf-8")
-                    message = msg["data"].decode("utf-8")
+                    username = user['data'].decode("utf-8")
+                    message = msg['data'].decode("utf-8")
                     print(f"Received message from {username}: {message}")
                     self.send_to_server(user, msg, notif_socket)
+                    print("Sent message to clients.")
         
         for notif_socket in exception_sockets:
 
@@ -76,7 +78,7 @@ class Server:
             
             message_length = int(header.decode('utf-8').strip())
 
-            return header, client_sckt.recv(message_length)
+            return {'header':header, 'data':client_sckt.recv(message_length)}
         
         except:
             return False
@@ -96,4 +98,4 @@ class Server:
 if __name__ == "__main__":
     server = Server()
     server.start_server()
-    server.receive()
+    server.event_loop()
