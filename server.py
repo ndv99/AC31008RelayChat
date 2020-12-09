@@ -35,7 +35,7 @@ class Server:
         print("Waiting for client...")
 
         while True:
-            read_sockets, _, exception_sockets = select.select(sockets_list, [], sockets_list)
+            read_sockets, _, exception_sockets = select.select(self.socket_list, [], self.socket_list)
 
             for notif_socket in read_sockets:
                 if notif_socket == self.socket:
@@ -43,7 +43,7 @@ class Server:
                     user = self.receive_message(client_sckt)
 
                     if user is False:
-                        continute
+                        continue
 
                     self.socket_list.appen(client_sckt)
                     self.clients[client_sckt] = user
@@ -58,7 +58,9 @@ class Server:
                         continue
                     
                     user = self.clients[notif_socket]
-                    print(f"Received message from {user["data"].decode("utf-8")}: {msg["data"].decode("utf-8")}")
+                    username = user["data"].decode("utf-8")
+                    message = msg["data"].decode("utf-8")
+                    print(f"Received message from {username}: {message}")
                     self.send_to_server(user, msg, notif_socket)
         
         for notif_socket in exception_sockets:
