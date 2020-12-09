@@ -4,6 +4,7 @@ SERVER_HOSTNAME = "127.0.0.1"
 SERVER_PORT = 6667
 
 class Client:
+    """A generic IRC client."""
 
     def __init__(self):
         """Initialises a Client object."""

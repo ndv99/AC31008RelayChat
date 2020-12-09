@@ -5,6 +5,7 @@ import string
 import client
 
 class Bot(client.Client):
+    """An implementation of Client as a bot to perform commands from users at runtime."""
 
     def __init__(self):
         pass

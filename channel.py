@@ -1,4 +1,5 @@
 class Channel:
+    """An IRC server channel."""
 
     def __init__(self):
         pass

@@ -3,6 +3,7 @@ import socket
 import types
 
 class Server:
+    """A generic IRC server."""
 
     def __init__(self):
         """Initialises a Server object."""
