@@ -1,4 +1,4 @@
-import selectors
+import select
 import socket
 import types
 
@@ -9,80 +9,83 @@ class Server:
         """Initialises a Server object."""
         self.ipv4_address = "127.0.0.1"
         self.port = 6667
+
         self.command_prefix = "!"
+        self.header_length = 10
+
         self.server_name = "UoD_IRCServer"
-        self.server_selector = selectors.DefaultSelector()
+
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.socket_list = [self.socket]
+        self.clients = {}
+        self.channels = []
+
 
     def start_server(self):
         """Starts the server."""
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((self.ipv4_address, self.port))
-        
-        self.socket_list = [self.socket]
-        self.clients = []
-        self.channels = []
 
-        print(f"'{self.server_name}' is now running on {self.ipv4_address}:{self.port}")
+        print(f"'{self.server_name}' is now running on {self.ipv4_address}:{self.port}.")
 
     def receive(self):
         """Waits to receive messages from clients."""
         self.socket.listen()
         print("Waiting for client...")
 
-        self.socket.setblocking(False)
-        self.server_selector.register(self.socket, selectors.EVENT_READ, data=None)
-
         while True:
-            events = self.server_selector.select(timeout=None)
-            for key, mask in events:
-                if key.data is None:
-                    self.accept_connection(key.fileobj)
+            read_sockets, _, exception_sockets = select.select(self.socket_list, [], self.socket_list)
+
+            for notif_socket in read_sockets:
+                if notif_socket == self.socket:
+                    client_sckt, client_addr = self.socket.accept()
+                    user = self.receive_message(client_sckt)
+
+                    if user is False:
+                        continue
+
+                    self.socket_list.appen(client_sckt)
+                    self.clients[client_sckt] = user
+                    print(f"{user['data'].decode('utf-8')} has connected to the server via {client_addr}")
+
                 else:
-                    self.service_connection(key, mask)
-    
-    def accept_connection(self, new_socket):
-        """Accepts a connection from a client.
+                    msg = self.receive_message(notif_socket)
+                    if msg is False:
+                        print(f"Terminated connection with {self.clients[notif_socket]['data'].decode('utf-8')}")
+                        self.socket_list.remove(notif_socket)
+                        del self.clients[notif_socket]
+                        continue
+                    
+                    user = self.clients[notif_socket]
+                    username = user["data"].decode("utf-8")
+                    message = msg["data"].decode("utf-8")
+                    print(f"Received message from {username}: {message}")
+                    self.send_to_server(user, msg, notif_socket)
         
-        Args:
-            new_socket (SelectorKey.fileobj): The socket of the client to connect to.
-        """
-        client_socket, client_address = new_socket.accept()
-        print(f"Accepted connection from {client_address}")
-        client_socket.setblocking(False)
-        self.socket_list.append(client_socket)
+        for notif_socket in exception_sockets:
 
-        data = types.SimpleNamespace(addr=client_address, inb=b'', outb=b'')
-        events = selectors.EVENT_READ | selectors.EVENT_WRITE
-        self.server_selector.register(client_socket, events, data=data)
-    
-    def service_connection(self, key, mask):
-        """Echoes a message back to a client.
+            self.socket_list.remove(notif_socket)
+            del self.clients[notif_socket]
 
-        Args:
-            key (SelectorKey): The selector key containing data for where to send data back to.
-            mask (int): From DefaultSelector.select.
-        """
-        connection_socket = key.fileobj
-        data = key.data
+    def receive_message(self, client_sckt):
+        try:
+            header = client_sckt.recv(self.header_length)
+            if not len(header):
+                return False
+            
+            message_length = int(header.decode('utf-8').strip())
 
-        if mask & selectors.EVENT_READ:
-            data_received = connection_socket.recv(1024)
-            if data_received:
-                data.outb += data_received
-            else:
-                print("Terminating connection to ", data.addr)
-                self.server_selector.unregister(connection_socket)
-                connection_socket.close()
-                
-        if mask & selectors.EVENT_WRITE:
-            if data.outb:
-                print("Echoing: ", repr(data.outb), " to ", data.addr)
-                sent = connection_socket.send(data.outb)
-                data.outb = data.outb[sent:]
+            return header, client_sckt.recv(message_length)
+        
+        except:
+            return False
 
-    def send_to_server(self):
-        pass
+
+    def send_to_server(self, user, msg, notif_socket):
+        for client_sckt in self.clients:
+            if client_sckt != notif_socket:
+                client_sckt.send(user['header'] + user['data'] + msg['header'] + msg['data'])
 
     def send_to_user(self):
         pass
