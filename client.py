@@ -1,7 +1,7 @@
 import socket
 
 SERVER_HOSTNAME = "127.0.0.1"
-SERVER_PORT = 6667
+SERVER_PORT = 1234 # 6667
 
 class Client:
     """A generic IRC client."""
