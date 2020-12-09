@@ -5,6 +5,7 @@ import string
 import client
 
 class Bot(client.Client):
+    """An implementation of Client as a bot to perform commands from users at runtime."""
 
     def __init__(self):
         pass
@@ -26,6 +27,7 @@ class Bot(client.Client):
 
 print("This is the bot file.")
 
-bot = Bot()
-bot.client_test_method()
-bot.bot_test_method()
+if __name__ == "__main__":
+    bot = Bot()
+    bot.client_test_method()
+    bot.bot_test_method()
