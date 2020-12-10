@@ -1,5 +1,5 @@
+import threading
 import socket
-import select
 import errno
 
 SERVER_HOSTNAME = "127.0.0.1"
@@ -39,19 +39,20 @@ class Client:
         self.client_socket.send(username_header + username_encoded)
 
     def send_message(self):
-        msg = input(f'{self.username} > ')
+        while True:
+            msg = input('')
 
-        if msg:
-            msg = msg.encode(self.encoding_scheme)
-            msg_header = f"{len(msg):<{self.header_length}}".encode(self.encoding_scheme)
-            self.client_socket.send(msg_header + msg)
+            if msg:
+                msg = msg.encode(self.encoding_scheme)
+                msg_header = f"{len(msg):<{self.header_length}}".encode(self.encoding_scheme)
+                self.client_socket.send(msg_header + msg)
 
     def receive_messages(self):
         usr_header = self.client_socket.recv(self.header_length)
 
         if not len(usr_header):
             print("Server closed.")
-            sys.exit()
+            exit()
         
         uname_length = int(usr_header.decode(self.encoding_scheme).strip())
         uname = self.client_socket.recv(uname_length).decode(self.encoding_scheme)
@@ -60,24 +61,25 @@ class Client:
         msg_length = int(msg_header.decode(self.encoding_scheme).strip())
         msg = self.client_socket.recv(msg_length).decode(self.encoding_scheme)
 
-        print(f"{uname}: {msg}")
+        print(f"\033[0;32;40m {uname}: {msg} \033[0;37;40m")
 
     def event_loop(self):
+        send_thread = threading.Thread(target=self.send_message)
+        send_thread.daemon = True
+        send_thread.start()
         while True:
-            self.send_message()
-            
             try:
                 while True:
                     self.receive_messages()
             except IOError as io_error:
                 if io_error.errno != errno.EAGAIN and io_error.errno != errno.EWOULDBLOCK:
                     print(f"Reading error: {str(io_error)}")
-                    sys.exit()
+                    exit()
                 
                 continue
             except Exception as exception:
                 print(f"Reading error: {str(io_error)}")
-                sys.exit()
+                exit()
 
     def join_channel(self):
         pass

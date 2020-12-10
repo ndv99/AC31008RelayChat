@@ -63,7 +63,6 @@ class Server:
                     message = msg['data'].decode("utf-8")
                     print(f"Received message from {username}: {message}")
                     self.send_to_server(user, msg, notif_socket)
-                    print("Sent message to clients.")
         
         for notif_socket in exception_sockets:
 
