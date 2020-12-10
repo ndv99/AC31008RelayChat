@@ -33,14 +33,14 @@ class Server:
         print("Waiting for client...")
 
         while True:
-            read_sockets, _, exception_sockets = select.select(self.socket_list, [], self.socket_list) # Checks if any new data can be read from sockets
+            read_sockets, _, exception_sockets = select.select(self.socket_list, [], self.socket_list) # Waits for new readable data from sockets
 
-            for notif_socket in read_sockets: # If a sokcet has new data to read
-                if notif_socket == self.socket:
-                    client_sckt, client_addr = self.socket.accept() # Accept a connection from a new client
+            for notif_socket in read_sockets: # Loop through sockets with new data to read
+                if notif_socket == self.socket: # If the socket is the socket that this server runs on (new connection)
+                    client_sckt, client_addr = self.socket.accept() # Accept a connection from a new client and assigns them a unique socket
                     usr = self.receive_message(client_sckt) # Get user data from that client
 
-                    if usr is False:
+                    if usr is False: # If client disconnected before sending name
                         continue
 
                     self.socket_list.append(client_sckt) # Add client's socket to socket list
@@ -56,26 +56,26 @@ class Server:
                         del self.clients[notif_socket] # Delete client from client dictionary
                         continue # Skips the following code to send a message to all clients
                     
-                    user = self.clients[notif_socket]
-                    username = user['data'].decode("utf-8")
-                    message = msg['data'].decode("utf-8")
-                    print(f"Received message from {username}: {message}")
-                    self.send_to_server(user, msg, notif_socket)
+                    user = self.clients[notif_socket] # Get sender of the message
+                    username = user['data'].decode("utf-8") # decode username
+                    message = msg['data'].decode("utf-8") # decode message
+                    print(f"Received message from {username}: {message}") # Output in server console
+                    self.send_to_server(user, msg, notif_socket) # Send user's message to all other clients in the server
         
-        for notif_socket in exception_sockets:
+        for notif_socket in exception_sockets: # Removes any misbehaving sockets
 
             self.socket_list.remove(notif_socket)
             del self.clients[notif_socket]
 
     def receive_message(self, client_sckt):
         try:
-            header = client_sckt.recv(self.header_length)
-            if not len(header):
+            header = client_sckt.recv(self.header_length) # Receive message header - contains message length
+            if not len(header): # Return false if there's no data received
                 return False
             
-            message_length = int(header.decode('utf-8').strip())
+            message_length = int(header.decode('utf-8').strip()) # convert header to int
 
-            return {'header':header, 'data':client_sckt.recv(message_length)}
+            return {'header':header, 'data':client_sckt.recv(message_length)} # Return dictionary containing header and data
         
         except:
             return False
@@ -84,6 +84,7 @@ class Server:
     def send_to_server(self, user, msg, notif_socket):
         for client_sckt in self.clients:
             if client_sckt != notif_socket:
+                # Send username and message, as well as headers
                 client_sckt.send(user['header'] + user['data'] + msg['header'] + msg['data'])
 
     def send_to_user(self):
