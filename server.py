@@ -12,6 +12,11 @@ class Server:
 
         self.command_prefix = "$"
         self.header_length = 1024
+        self.commands = [
+            "$help: Shows all commands",
+            "$join <channel>: Moves you to <channel>",
+            "$private <user>: Begins private messaging with <user>",
+            "$channels: Displays a list of channels in the server"]
 
         self.server_name = "UoD_IRCServer"
         self.server_name_error = f"{self.server_name}_error"
@@ -47,13 +52,58 @@ class Server:
     def handle_command(self, message, notif_socket):
         message = message.split(" ")
         if message[0] == "$join":
-            if message[1] not in self.public_channels:
-                msg_content = f"'{message[1]}' is not a valid channel. Use $channels to get a list of channel names."
+            if len(message) > 1:
+                if message[1] not in self.public_channels:
+                    msg_content = f"'{message[1]}' is not a valid channel. Use $channels to get a list of channel names."
+                    msg = self.compose_message(msg_content)
+                    self.send_to_user(self.error_message_metadata, msg, notif_socket)
+                else:
+                    self.remove_client_from_channel(notif_socket)
+                    self.assign_client_channel(message[1], notif_socket)
+        elif message[0] == "$channels":
+            channels = []
+            for channel in self.public_channels:
+                channels.append(channel)
+            msg_content = f"Channels: {channels}"
+            msg = self.compose_message(msg_content)
+            self.send_to_user(self.server_metadata, msg, notif_socket)
+        elif message[0] == "$help":
+            for command in self.commands:
+                msg_content = f"{command}"
                 msg = self.compose_message(msg_content)
-                self.send_to_user(self.error_message_metadata, msg, notif_socket)
-            else:
-                self.remove_client_from_channel(notif_socket)
-                self.assign_client_channel(message[1], notif_socket)
+                self.send_to_user(self.server_metadata, msg, notif_socket)
+        elif message[0] == "$private":
+            if len(message) > 1:
+                uname_list = []
+                for client in self.clients:
+                    uname_list.append(self.get_username(client))
+                if message[1] != self.get_username(notif_socket):
+                    if message[1] not in uname_list:
+                        msg_content = f"'{message[1]}' is not a valid username. Use $users to get a list of usernames."
+                        msg = self.compose_message(msg_content)
+                        self.send_to_user(self.error_message_metadata, msg, notif_socket)
+                    else:
+                        notif_uname = self.get_username(notif_socket)
+                        recip_socket = None
+                        for client in self.clients:
+                            if self.get_username(client) == message[1]:
+                                recip_socket = client
+                                break
+                        self.private_channels[f'{notif_uname}|{message[1]}'] = [notif_socket, recip_socket]
+                        self.remove_client_from_channel(notif_socket)
+                        self.remove_client_from_channel(recip_socket)
+
+                        msg_content = f"You are now in a private channel with {message[1]}"
+                        msg = self.compose_message(msg_content)
+                        self.send_to_user(self.server_metadata, msg, notif_socket)
+
+                        msg_content = f"You are now in a private channel with {notif_uname}"
+                        msg = self.compose_message(msg_content)
+                        self.send_to_user(self.server_metadata, msg, recip_socket)
+        else:
+            msg_content = f"'{message[0]}' is not a valid command. Use $help to get a list of commands."
+            msg = self.compose_message(msg_content)
+            self.send_to_user(self.error_message_metadata, msg, notif_socket)
 
     def event_loop(self):
         """Main even loop for the program"""
@@ -153,8 +203,8 @@ class Server:
                 self.public_channels[channel].remove(notif_socket)
     
     def get_username(self, client_sckt):
-        user = self.clients[client_sckt]
-        return user['data'].decode("utf-8")
+        user = self.clients[client_sckt]['data'].decode('utf-8')
+        return user
 
     def receive_message(self, client_sckt):
         try:
@@ -178,12 +228,22 @@ class Server:
     
     def send_to_channel(self, author, msg, notif_socket):
         # find client's channel
+        public_msg = False
         for channel in self.public_channels:
             if notif_socket in self.public_channels[channel]:
                 for client_sckt in self.public_channels[channel]:
                     if client_sckt != notif_socket:
                         # Send username and message, as well as headers
                         client_sckt.send(author['header'] + author['data'] + msg['header'] + msg['data'])
+                        public_msg = True
+        
+        if public_msg == False:
+            for channel in self.private_channels:
+                if notif_socket in self.private_channels[channel]:
+                    for client_sckt in self.private_channels[channel]:
+                        if client_sckt != notif_socket:
+                            # Send username and message, as well as headers
+                            client_sckt.send(author['header'] + author['data'] + msg['header'] + msg['data'])
 
     def send_to_user(self, author, msg, client_sckt):
         client_sckt.send(author['header'] + author['data'] + msg['header'] + msg['data'])
