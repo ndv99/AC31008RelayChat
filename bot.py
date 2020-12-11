@@ -8,7 +8,18 @@ class Bot(client.Client):
     """An implementation of Client as a bot to perform commands from users at runtime."""
 
     def __init__(self):
-        pass
+        super().__init__()
+
+    def connect_to_server(self):
+        self.username = "IRCBot"
+
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect((host, port))
+        self.client_socket.setblocking(False)
+
+        username_encoded = self.username.encode(self.encoding_scheme)
+        username_header = f"{len(self.username):<{self.header_length}}".encode(self.encoding_scheme)
+        self.client_socket.send(username_header + username_encoded)
 
     def listen(self):
         pass
@@ -21,9 +32,6 @@ class Bot(client.Client):
 
     def parse_server_data(self):
         pass
-    
-    def bot_test_method(self):
-        print("This is a test from the 'Bot' class.")
 
 print("This is the bot file.")
 
