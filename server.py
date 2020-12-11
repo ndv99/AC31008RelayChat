@@ -195,12 +195,30 @@ class Server:
 
     
     def remove_client_from_channel(self, notif_socket):
+        priv_channel = True
         for channel in self.public_channels:
             if notif_socket in self.public_channels[channel]:
+                priv_channel = False
                 msg_content = f"{self.get_username(notif_socket)} has left {channel}"
                 msg = self.compose_message(msg_content)
                 self.send_to_channel(self.server_metadata, msg, notif_socket)
                 self.public_channels[channel].remove(notif_socket)
+        
+        if priv_channel:
+            clients = []
+            private_channel = None
+            for channel in self.private_channels:
+                if notif_socket in self.private_channels[channel]:
+                    private_channel = channel
+                    for client_socket in self.private_channels[channel]:
+                        clients.append(client_socket)
+            
+            for client_socket in clients:
+                if client_socket != notif_socket:
+                    self.assign_client_channel('general', client_socket)
+                self.private_channels[private_channel].remove(client_socket)
+            del self.private_channels[private_channel]
+
     
     def get_username(self, client_sckt):
         user = self.clients[client_sckt]['data'].decode('utf-8')
