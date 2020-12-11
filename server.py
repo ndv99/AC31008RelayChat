@@ -11,14 +11,21 @@ class Server:
         self.port = 6667
 
         self.command_prefix = "!"
-        self.header_length = 10
+        self.header_length = 1024
 
         self.server_name = "UoD_IRCServer"
+        self.server_metadata = {'header': f"{len(self.server_name):<{self.header_length}}".encode('utf-8'),
+                                'data': self.server_name.encode('utf-8')
+                                }
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.socket_list = [self.socket]
         self.clients = {}
+        self.channels = {
+            "General" : [],
+            "Other" : []
+        }
 
     def start_server(self):
         """Starts the server."""
@@ -43,10 +50,7 @@ class Server:
                     if usr is False: # If client disconnected before sending name
                         continue
 
-                    self.socket_list.append(client_sckt) # Add client's socket to socket list
-                    self.clients[client_sckt] = usr # Add client to client dictionary
-                    username = usr['data'].decode('utf-8')
-                    print(f"{username} has connected to the server.")
+                    self.hold_new_client(client_sckt, usr)
 
                 else:
                     msg = self.receive_message(notif_socket) # Get message from socket
@@ -66,6 +70,38 @@ class Server:
 
             self.socket_list.remove(notif_socket)
             del self.clients[notif_socket]
+    
+    def hold_new_client(self, client_sckt, usr):
+        username = usr['data'].decode('utf-8')
+
+        for client in self.clients:
+            if self.clients[client]['data'].decode('utf-8') == username:
+                print("Client tried to connect with invalid username")
+                msg_content = "invalid_uname"
+                msg_content = msg_content.encode('utf-8')
+                msg_header = f"{len(msg_content):<{self.header_length}}".encode('utf-8')
+
+                msg = {
+                    'header': msg_header,
+                    'data': msg_content
+                }
+                self.send_to_user(self.server_metadata, msg, client_sckt)
+                return False
+
+
+        self.socket_list.append(client_sckt) # Add client's socket to socket list
+        self.clients[client_sckt] = usr # Add client to client dictionary
+        msg_content = "conn_accepted"
+        msg_content = msg_content.encode('utf-8')
+        msg_header = f"{len(msg_content):<{self.header_length}}".encode('utf-8')
+
+        msg = {
+            'header': msg_header,
+            'data': msg_content
+        }
+        self.send_to_user(self.server_metadata, msg, client_sckt)
+        print(f"New client {usr['data'].decode('utf-8')} has connected.")
+        
 
     def receive_message(self, client_sckt):
         try:
@@ -81,14 +117,14 @@ class Server:
             return False
 
 
-    def send_to_server(self, user, msg, notif_socket):
+    def send_to_server(self, author, msg, notif_socket):
         for client_sckt in self.clients:
             if client_sckt != notif_socket:
                 # Send username and message, as well as headers
-                client_sckt.send(user['header'] + user['data'] + msg['header'] + msg['data'])
+                client_sckt.send(author['header'] + author['data'] + msg['header'] + msg['data'])
 
-    def send_to_user(self):
-        pass
+    def send_to_user(self, author, msg, client_sckt):
+        client_sckt.send(author['header'] + author['data'] + msg['header'] + msg['data'])
 
     def create_channel(self):
         pass
