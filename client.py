@@ -17,6 +17,15 @@ class Client:
         self.client_socket = None
         self.username = ""
         self.encoding_scheme = 'utf-8'
+        self.server_name = ""
+
+        self.message_colours = {
+            'default': "\033[0;37;40m",
+            'server': "\033[0;34;40m",
+            'error': "\033[0;31;40m",
+            'client': "\033[0;32;40m",
+            'bot': "\033[0;33;40m"
+        }
 
     def connect_to_server(self, host, port):
         """Connects a Client to a server.
@@ -43,11 +52,27 @@ class Client:
             for notif_socket in read_sockets: # Loop through sockets with new data to read
                 if notif_socket == self.client_socket:
                     uname, msg = self.receive_messages(show=False)
+                    self.server_name = uname
                     if msg == "conn_accepted":
                         valid_username = True
-                        print(f"\033[0;34;40m Welcome to {uname}!\033[0;37;40m")
+                        self.display_message(uname, f"Welcome to {uname}! Type '$help' to get help with commands.")
                     else:
-                        print(f"\033[0;31;40m Username '{self.username}' is already taken. Try another name.\033[0;37;40m")
+                        self.display_message(uname, f"Username '{self.username}' is already taken. Try another name.", msg_type="error")
+        
+    
+    def display_message(self, usr, msg, msg_type=None):
+        if msg_type is None:
+            user_types = {
+                self.username: "default",
+                self.server_name: "server",
+                f"{self.server_name}_error": "error",
+                "IRCBot": "bot"
+            }
+            if usr not in user_types:
+                msg_type = "client"
+            else:
+                msg_type = user_types[usr]
+        print(f"{self.message_colours[msg_type]} {usr}: {msg} \033[0;37;40m")
                         
 
     def send_message(self):
@@ -74,7 +99,7 @@ class Client:
         msg = self.client_socket.recv(msg_length).decode(self.encoding_scheme)
 
         if show:
-            print(f"\033[0;32;40m {uname}: {msg} \033[0;37;40m")
+            self.display_message(uname, msg)
         
         return uname, msg
 
