@@ -53,13 +53,13 @@ class Server:
         message = message.split(" ")
         if message[0] == "$join":
             if len(message) > 1:
-                if message[1] not in self.public_channels:
+                if message[1].lower() not in self.public_channels:
                     msg_content = f"'{message[1]}' is not a valid channel. Use $channels to get a list of channel names."
                     msg = self.compose_message(msg_content)
                     self.send_to_user(self.error_message_metadata, msg, notif_socket)
                 else:
                     self.remove_client_from_channel(notif_socket)
-                    self.assign_client_channel(message[1], notif_socket)
+                    self.assign_client_channel(message[1].lower, notif_socket)
         elif message[0] == "$channels":
             channels = []
             for channel in self.public_channels:
