@@ -146,9 +146,25 @@ class Server:
             self.socket_list.remove(notif_socket)
             del self.clients[notif_socket]
     
-    def hold_new_client(self, client_sckt, usr):
+    def hold_new_client(self, client_sckt, usr): # Checks against username rules in IRC spec
         username = usr['data'].decode('utf-8')
-
+        if len(username) > 9 or username[0] == "-":
+            print("Client tried to connect with invalid username")
+            msg_content = "invalid_uname"
+            msg = self.compose_message(msg_content)
+            self.send_to_user(self.server_metadata, msg, client_sckt)
+            return False
+        
+        try:
+            if int(username[0]):
+                print("Client tried to connect with invalid username")
+                msg_content = "invalid_uname"
+                msg = self.compose_message(msg_content)
+                self.send_to_user(self.server_metadata, msg, client_sckt)
+                return False
+        except ValueError:
+            pass
+        
         for client in self.clients:
             if self.clients[client]['data'].decode('utf-8') == username:
                 print("Client tried to connect with invalid username")
