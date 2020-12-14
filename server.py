@@ -35,8 +35,8 @@ class Server:
         self.socket_list = [self.socket]
         self.clients = {}
         self.public_channels = {
-            "general" : [],
-            "other" : []
+            "#general" : [],
+            "#other" : []
         }
         self.private_channels = {
 
