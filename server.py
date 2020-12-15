@@ -11,7 +11,7 @@ class Server:
         self.port = 6667
 
         self.command_prefix = "$"
-        self.header_length = 1024
+        self.header_length = 512
         self.commands = [
             "$help: Shows all commands",
             "$join <channel>: Moves you to <channel>",
@@ -51,7 +51,7 @@ class Server:
 
     def handle_command(self, message, notif_socket):
         message = message.split(" ")
-        if message[0] == "$join":
+        if message[0] == "JOIN":
             if len(message) > 1:
                 if message[1].lower() not in self.public_channels:
                     msg_content = f"'{message[1]}' is not a valid channel. Use $channels to get a list of channel names."
@@ -60,7 +60,7 @@ class Server:
                 else:
                     self.remove_client_from_channel(notif_socket)
                     self.assign_client_channel(message[1].lower, notif_socket)
-        elif message[0] == "$channels":
+        elif message[0] == "NAMES":
             channels = []
             for channel in self.public_channels:
                 channels.append(channel)
@@ -72,7 +72,7 @@ class Server:
                 msg_content = f"{command}"
                 msg = self.compose_message(msg_content)
                 self.send_to_user(self.server_metadata, msg, notif_socket)
-        elif message[0] == "$private":
+        elif message[0] == "PRIVMSG":
             if len(message) > 1:
                 uname_list = []
                 for client in self.clients:
@@ -116,12 +116,28 @@ class Server:
             for notif_socket in read_sockets: # Loop through sockets with new data to read
                 if notif_socket == self.socket: # If the socket is the socket that this server runs on (new connection)
                     client_sckt, client_addr = self.socket.accept() # Accept a connection from a new client and assigns them a unique socket
-                    usr = self.receive_message(client_sckt) # Get user data from that client
-                    print("something is happening")
-                    if usr is False: # If client disconnected before sending name
-                        continue
+                    
+                    # https://ircv3.net/specs/core/capability-negotiation.htmls
+                    handshake = []
+                    for i in range(2):
+                        msg = self.receive_message(client_sckt) # Get user data from that client
+                        msg = msg.decode('utf-8')[:-2].split('\r\n')
+                        for part in msg:
+                            handshake.append(part)
+                    
+                    print("Loop finished")
+                    print(handshake)
 
-                    self.hold_new_client(client_sckt, usr)
+                    nickname = handshake[1].split(" ")[1]
+                    mymessage = f"001 {nickname}: Welcome to the Internet Relay Network {nickname}"
+                    client_sckt.send(mymessage.encode('utf-8'))
+
+                    print("message sent")
+
+                    # if usr is False: # If client disconnected before sending name
+                    #     continue
+
+                    # self.hold_new_client(client_sckt, usr)
 
                 else:
                     msg = self.receive_message(notif_socket) # Get message from socket
@@ -242,22 +258,15 @@ class Server:
 
     def receive_message(self, client_sckt):
         try:
-            header = client_sckt.recv(self.header_length) # Receive message header - contains message length
-            print(header.decode('utf-8'))
-            if not len(header): # Return false if there's no data received
-                print("uh oh stinky")
+            msg = client_sckt.recv(4096) # Receive message
+            print(msg.decode('utf-8'))
+            if not len(msg): # Return false if there's no data received
                 return False
-            
-            print("very niceeeee")
-            message_length = int(header.decode('utf-8').strip()) # convert header to int
-            data = client_sckt.recv(message_length)
 
-            print("header: {header}")
-            print("data: {data}")
-
-            return {'header':header, 'data':data} # Return dictionary containing header and data
+            return msg
         
-        except:
+        except Exception as e:
+            print(e)
             return False
 
 
