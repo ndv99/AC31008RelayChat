@@ -117,7 +117,7 @@ class Server:
                 if notif_socket == self.socket: # If the socket is the socket that this server runs on (new connection)
                     client_sckt, client_addr = self.socket.accept() # Accept a connection from a new client and assigns them a unique socket
                     usr = self.receive_message(client_sckt) # Get user data from that client
-
+                    print("something is happening")
                     if usr is False: # If client disconnected before sending name
                         continue
 
@@ -150,7 +150,7 @@ class Server:
         username = usr['data'].decode('utf-8')
         if len(username) > 9 or username[0] == "-":
             print("Client tried to connect with invalid username")
-            msg_content = "invalid_uname"
+            msg_content = "ERR_ERRONEUSNICKNAME"
             msg = self.compose_message(msg_content)
             self.send_to_user(self.server_metadata, msg, client_sckt)
             return False
@@ -158,7 +158,7 @@ class Server:
         try:
             if int(username[0]):
                 print("Client tried to connect with invalid username")
-                msg_content = "invalid_uname"
+                msg_content = "ERR_NONICKNAMEGIVEN             "
                 msg = self.compose_message(msg_content)
                 self.send_to_user(self.server_metadata, msg, client_sckt)
                 return False
@@ -168,7 +168,7 @@ class Server:
         for client in self.clients:
             if self.clients[client]['data'].decode('utf-8') == username:
                 print("Client tried to connect with invalid username")
-                msg_content = "invalid_uname"
+                msg_content = "ERR_NICKCOLLISION"
                 msg = self.compose_message(msg_content)
                 self.send_to_user(self.server_metadata, msg, client_sckt)
                 return False
@@ -243,12 +243,19 @@ class Server:
     def receive_message(self, client_sckt):
         try:
             header = client_sckt.recv(self.header_length) # Receive message header - contains message length
+            print(header.decode('utf-8'))
             if not len(header): # Return false if there's no data received
+                print("uh oh stinky")
                 return False
             
+            print("very niceeeee")
             message_length = int(header.decode('utf-8').strip()) # convert header to int
+            data = client_sckt.recv(message_length)
 
-            return {'header':header, 'data':client_sckt.recv(message_length)} # Return dictionary containing header and data
+            print("header: {header}")
+            print("data: {data}")
+
+            return {'header':header, 'data':data} # Return dictionary containing header and data
         
         except:
             return False
