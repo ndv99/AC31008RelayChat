@@ -1,8 +1,12 @@
 import socket
 
 class Memory:
+    """A class that stores data for the server that all the connection threads may need to access.
+    """    
 
     def __init__(self):
+        """Initialises the memory object.
+        """        
         self.ipv4_address = "127.0.0.1"
         self.ipv6_address = "::1"
         self.port = 6667

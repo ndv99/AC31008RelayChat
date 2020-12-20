@@ -20,6 +20,7 @@ class Server:
         print(f"'{self.memory.server_name}' is now running on {self.memory.ipv6_address}:{self.memory.port}.")
     
     def event_loop(self):
+        """Event loop for the server, listens for new connections and accepts them."""
         self.memory.socket.listen()
 
         while True:
