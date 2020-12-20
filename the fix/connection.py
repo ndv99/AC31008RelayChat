@@ -16,6 +16,7 @@ class Connection:
             "USER",
             "QUIT",
             "JOIN",
+            "PART",
             "PRIVMSG"
         ]
 
@@ -48,6 +49,8 @@ class Connection:
                 self.join_channel(self.socket, cmd[1])
             elif cmd[0] == "PRIVMSG":
                 self.message(self.socket, cmd[1], " ".join(cmd[2:]))
+            elif cmd[0] == "PART":
+                self.leave_channel(self.socket, cmd[1])
     
     def set_nickname(self, nickname):
         if len(nickname) > 9 or nickname[0] == "-":
@@ -118,6 +121,13 @@ class Connection:
 
             msg = f"366 {chan} :End of NAMES list"
             self.send_message_from_server(sckt, msg)
+    
+    def leave_channel(self, sckt, chan):
+        if chan in self.server_mem.channels:
+            self.server_mem.channels[chan].remove(sckt)
+            for socket in self.server_mem.channels[chan]:
+                msg = f"{self.nickname}!{self.realname}@{self.address} PART {chan}"
+                self.send_message(socket, msg)
 
     def message(self, sckt, chan, msg):
         if chan[0] == "#":
