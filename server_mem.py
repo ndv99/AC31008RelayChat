@@ -6,6 +6,9 @@ class Memory:
 
     def __init__(self, ipv6_addr):
         """Initialises the memory object.
+
+        Args:
+            ipv6_addr (string): A valid IPv6 address as a string
         """        
         self.ipv4_address = "127.0.0.1"
         self.ipv6_address = ipv6_addr
