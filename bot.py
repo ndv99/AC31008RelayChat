@@ -2,27 +2,33 @@ import socket
 import random
 import sys
 import string
-import client
 
-class Bot(client.Client):
+class Bot():
     """An implementation of Client as a bot to perform commands from users at runtime."""
 
     def __init__(self):
-        super().__init__()
+        self.socket = None
+        self.nickname = "IRCBot"
+        self.realname = "IRCBot"
+        self.host = "::1"
+        self.port = 6667
+
+        self.channels = {
+
+        }
 
     def connect_to_server(self):
-        self.username = "IRCBot"
-
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((host, port))
-        self.client_socket.setblocking(False)
-
-        username_encoded = self.username.encode(self.encoding_scheme)
-        username_header = f"{len(self.username):<{self.header_length}}".encode(self.encoding_scheme)
-        self.client_socket.send(username_header + username_encoded)
+        self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        self.socket.connect((self.host, self.port))
+        self.send_message(f"NICK {self.nickname}")
+        self.send_message(f"USER {self.realname} 0 * :realname")
+        self.send_message(f"JOIN #general")
 
     def listen(self):
-        pass
+        while True:
+            msg = self.socket.recv(4096)
+            if msg:
+                print(msg)
 
     def check_for_command(self):
         pass
@@ -30,12 +36,14 @@ class Bot(client.Client):
     def reply(self):
         pass
 
+    def send_message(self, msg):
+        self.socket.send(f"{msg}\r\n".encode())
+
     def parse_server_data(self):
         pass
 
-print("This is the bot file.")
 
 if __name__ == "__main__":
     bot = Bot()
-    bot.client_test_method()
-    bot.bot_test_method()
+    bot.connect_to_server()
+    bot.listen()
