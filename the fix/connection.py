@@ -15,7 +15,8 @@ class Connection:
             "NICK",
             "USER",
             "QUIT",
-            "JOIN"
+            "JOIN",
+            "PRIVMSG"
         ]
 
     def loop(self):
@@ -45,6 +46,8 @@ class Connection:
                 del self.server_mem.clients[self.socket]
             elif cmd[0] == "JOIN":
                 self.join_channel(self.socket, cmd[1])
+            elif cmd[0] == "PRIVMSG":
+                self.message(self.socket, cmd[1], " ".join(cmd[2:]))
     
     def set_nickname(self, nickname):
         if len(nickname) > 9 or nickname[0] == "-":
@@ -81,37 +84,65 @@ class Connection:
     def set_realname(self, name):
         self.realname = name
         
+        self.server_mem.clients[self.socket] = self.nickname
+        self.server_mem.socket_list.append(self.socket)
+
         msg = f"Welcome to the Internet Relay Network {self.nickname}!{self.nickname}@{self.address}"
         self.send_code("001", self.socket, self.nickname, msg)
-        self.server_mem.socket_list.append(self.socket)
-        self.server_mem.clients[self.socket] = self.nickname
+
+        msg = f"Your host is {self.server_mem.ipv4_address}, running version {self.server_mem.server_name}"
+        self.send_code("002", self.socket, self.nickname, msg)
+
+        msg = f"This server was created in 2000 - no wait, that's the protocol. The server was made 20 years after everyone stopped using IRC."
+        self.send_code("003", self.socket, self.nickname, msg)
+
+        msg = f"my-awful-irc-server v420.69"
+        self.send_code("004", self.socket, self.nickname, msg)
 
     def join_channel(self, sckt, chan):
         if chan in self.server_mem.channels:
             self.server_mem.channels[chan].append(sckt)
             for socket in self.server_mem.channels[chan]:
-                msg = f"{self.nickname}!{self.nickname}@{self.address}\r\nJOIN {chan}"
+                msg = f"{self.nickname}!{self.realname}@{self.address} JOIN {chan}"
                 self.send_message(socket, msg)
             
-            msg = f"332 {chan} :no topic"
+            msg = f"332 {chan} :{chan} no topic"
             self.send_message_from_server(sckt, msg)
 
             chan_members = []
             for socket in self.server_mem.channels[chan]:
                 chan_members.append(self.server_mem.clients[socket])
             chan_members = " ".join(chan_members)
-            msg = f"353 {self.nickname} = {chan} :@{chan_members}"
+            msg = f"353 {self.nickname} = {chan} :{chan_members}"
             self.send_message_from_server(sckt, msg)
 
             msg = f"366 {chan} :End of NAMES list"
             self.send_message_from_server(sckt, msg)
 
+    def message(self, sckt, chan, msg):
+        if chan[0] == "#":
+            for client in self.server_mem.channels[chan]:
+                if client != self.socket:
+                    self.send_message_from_user(client, msg, chan)
+        else:
+            found = False
+            for client in self.server_mem.clients:
+                if self.server_mem.clients[client] == chan:
+                    self.send_message_from_user(client, msg, chan)
+                    found = True
 
     def send_code(self, code, sckt, usr, msg):
-        sckt.send(f":{self.server_mem.ipv4_address} {code} * {usr} :{msg}\r\n".encode())
+        sckt.send(f":{self.server_mem.ipv4_address} {code} {usr} {msg}\r\n".encode())
+        print(f":{self.server_mem.ipv4_address} {code} {usr} {msg}\r\n")
     
     def send_message_from_server(self, sckt, msg):
         sckt.send(f":{self.server_mem.ipv4_address} {msg}\r\n".encode())
+        print(f":{self.server_mem.ipv4_address} {msg}\r\n")
     
+    def send_message_from_user(self, sckt, msg, chan):
+        sckt.send(f":{self.nickname}!{self.realname}@{self.address} PRIVMSG {chan} {msg}\r\n".encode())
+        print(f"from {self.nickname} to {chan}:{self.nickname}!{self.realname}@{self.address} PRIVMSG {chan} {msg}")
+
     def send_message(self, sckt, msg):
-        sckt.send(f"{msg}\r\n".encode())
+        sckt.send(f":{msg}\r\n".encode())
+        print(f":{msg}\r\n")
