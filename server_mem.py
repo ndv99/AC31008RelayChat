@@ -17,7 +17,6 @@ class Memory:
         self.server_version = "420.69"
 
         self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        self.socket_list = [self.socket] # A list of connected sockets.
         self.clients = {} # Stores client nicknames with their socket as a key.
 
         self.channels = {

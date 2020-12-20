@@ -60,6 +60,9 @@ class Connection:
                         self.check_command(None, self.cached_command)
         except ConnectionResetError:
             print("Client disconnected. Connection reset.")
+            if self.socket in self.server_mem.clients:
+                del self.server_mem.clients[self.socket]
+
         except BrokenPipeError:
             print("Broken pipe (how the fuck did this happen?!)")
 
@@ -87,7 +90,6 @@ class Connection:
                 else:
                     self.cached_command = cmd
             elif cmd[0] == "QUIT":
-                self.server_mem.socket_list.remove(self.socket)
                 del self.server_mem.clients[self.socket]
             elif cmd[0] == "JOIN":
                 self.join_channel(cmd[1])
@@ -153,7 +155,6 @@ class Connection:
         self.realname = name
 
         self.server_mem.clients[self.socket] = self.nickname
-        self.server_mem.socket_list.append(self.socket)
         self.send_welcome_messages()
     
     def send_welcome_messages(self):
@@ -186,24 +187,26 @@ class Connection:
             chan (string): The name of the channel.
         """
 
-        if chan in self.server_mem.channels:
-            self.server_mem.channels[chan].append(self.socket)
-            for socket in self.server_mem.channels[chan]:
-                msg = f"{self.nickname}!{self.realname}@{self.address} JOIN {chan}"
-                self.send_message(socket, msg)
+        if chan not in self.server_mem.channels:
+            self.server_mem.channels[chan] = []
+        
+        self.server_mem.channels[chan].append(self.socket)
+        for socket in self.server_mem.channels[chan]:
+            msg = f"{self.nickname}!{self.realname}@{self.address} JOIN {chan}"
+            self.send_message(socket, msg)
 
-            msg = f"332 {chan} :{chan} no topic"
-            self.send_message_from_server(msg)
+        msg = f"332 {chan} :{chan} no topic"
+        self.send_message_from_server(msg)
 
-            chan_members = []
-            for socket in self.server_mem.channels[chan]:
-                chan_members.append(self.server_mem.clients[socket])
-            chan_members = " ".join(chan_members)
-            msg = f"353 {self.nickname} = {chan} :{chan_members}"
-            self.send_message_from_server(msg)
+        chan_members = []
+        for socket in self.server_mem.channels[chan]:
+            chan_members.append(self.server_mem.clients[socket])
+        chan_members = " ".join(chan_members)
+        msg = f"353 {self.nickname} = {chan} :{chan_members}"
+        self.send_message_from_server(msg)
 
-            msg = f"366 {chan} :End of NAMES list"
-            self.send_message_from_server(msg)
+        msg = f"366 {chan} :End of NAMES list"
+        self.send_message_from_server(msg)
 
     def leave_channel(self, chan):
         """Removes a client from a channel.
@@ -238,11 +241,9 @@ class Connection:
                 if client != self.socket:
                     self.send_message_from_user(client, msg, chan)
         else:  # if target is a user
-            found = False
             for client in self.server_mem.clients:
                 if self.server_mem.clients[client] == chan:
                     self.send_message_from_user(client, msg, chan)
-                    found = True
 
     def send_code(self, code, usr, msg):
         """Sends a numeric reply code code to the client from the server.
