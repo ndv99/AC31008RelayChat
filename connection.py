@@ -34,7 +34,8 @@ class Connection:
             "PART",
             "PRIVMSG",
             "WHO",
-            "MODE"
+            "MODE",
+            "LIST"
         ]
 
         self.cached_command = None
@@ -94,6 +95,8 @@ class Connection:
                 self.message(cmd[1], " ".join(cmd[2:]))
             elif cmd[0] == "PART":
                 self.leave_channel(cmd[1])
+            elif cmd[0] == "LIST":
+                self.list_channels()
         else:
             print("Unknown command.")
 
@@ -169,6 +172,12 @@ class Connection:
         msg = f"{self.server_mem.server_name} v{self.server_mem.server_version}"
         self.send_code("004", self.nickname, msg)
 
+    def list_channels(self):
+        for channel in self.server_mem.channels:
+            msg = f"{channel} {len(self.server_mem.channels[channel])} :"
+            self.send_code("322", self.nickname, msg)
+        msg = f":End of /LIST"
+        self.send_code("323", self.nickname, msg)
 
     def join_channel(self, chan):
         """Puts the client into a channel that they have specified.
