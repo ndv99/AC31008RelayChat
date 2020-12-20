@@ -151,7 +151,12 @@ class Connection:
 
         self.server_mem.clients[self.socket] = self.nickname
         self.server_mem.socket_list.append(self.socket)
-
+        self.send_welcome_messages()
+    
+    def send_welcome_messages(self):
+        """Sends welcome messages to the user.
+        """
+        
         msg = f"Welcome to the Internet Relay Network {self.nickname}!{self.nickname}@{self.address}"
         self.send_code("001", self.nickname, msg)
 
@@ -163,6 +168,7 @@ class Connection:
 
         msg = f"{self.server_mem.server_name} v{self.server_mem.server_version}"
         self.send_code("004", self.nickname, msg)
+
 
     def join_channel(self, chan):
         """Puts the client into a channel that they have specified.
