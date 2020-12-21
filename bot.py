@@ -45,10 +45,14 @@ class Bot():
             self.send_message(f"JOIN {channel}")
 
     def listen(self):
-        while True:
-            msg = self.socket.recv(4096)
-            if msg:
-                print(msg.decode())
+        try:
+            while True:
+                msg = self.socket.recv(4096)
+                if msg:
+                    print(msg.decode())
+        except ConnectionResetError:
+            print("The server has closed. Shutting down bot.")
+            sys.exit(0)
 
     def check_for_command(self):
         pass
@@ -62,8 +66,37 @@ class Bot():
     def parse_server_data(self):
         pass
 
+def process_args(arg):
+    """Processes the arguments provided in the terminal.
+
+    Args:
+        arg (string): Should be an IPv6 address
+
+    Returns:
+        bool: True if address is valid, false if address is invalid.
+    """
+
+    try:
+        socket.inet_aton(arg)
+        return True
+    except socket.error:
+        print(
+            "That IP address is not valid. Please provde a valid IP adddress and try again.")
+        return False
 
 if __name__ == "__main__":
-    bot = Bot()
-    bot.connect_to_server()
-    bot.listen()
+    try:
+        valid = process_args(sys.argv[1])
+        if valid:
+            bot = Bot()
+        else:
+            sys.exit(1)
+    except IndexError:
+        print("No args given, connecting to default IPv6 address (::1)...")
+        bot = Bot()
+    try:
+        bot.connect_to_server()
+        bot.listen()
+    except ConnectionRefusedError:
+        print("The server is not running. Contact the server owner.")
+        sys.exit(1)

@@ -77,14 +77,14 @@ class Connection:
             cmd = cmd_split
         else:
             cmd = cmd_string.split(" ")
-        print(f"Running command: {" ".join(cmd)}")
+        print(f"Running command: {' '.join(cmd)}")
         if cmd[0] in self.commands:
             if cmd[0] == "NICK":
                 self.set_nickname(cmd[1])
             elif cmd[0] == "USER":
                 if self.nick_set:
                     self.set_realname(cmd[1])
-                    self.cached_command = None
+                    self.cached_command = None # gotta uncache it if it's been cached.
                 else:
                     self.cached_command = cmd
             elif cmd[0] == "QUIT":
