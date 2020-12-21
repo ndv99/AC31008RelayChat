@@ -29,6 +29,14 @@ class Bot():
             msg = self.socket.recv(4096)
             if msg:
                 print(msg)
+    
+            msg = msg.decode()
+            msg = msg.split(" ")
+
+            if msg[2] in self.channels:
+                if msg[3][1] == "!":
+                    print("command")
+
 
     def check_for_command(self):
         pass
@@ -39,8 +47,12 @@ class Bot():
     def send_message(self, msg):
         self.socket.send(f"{msg}\r\n".encode())
 
+    def send_privmsg(self, target, msg):
+        self.socket.send(f"PRIVMSG {target} :{msg}")
+
     def parse_server_data(self):
         pass
+
 
 
 if __name__ == "__main__":
