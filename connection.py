@@ -48,7 +48,6 @@ class Connection:
             while True:
                 msg = self.socket.recv(4096)
                 if msg:
-                    print(msg)
                     msg = msg.decode().split('\r\n')
 
                     for part in msg:
@@ -78,15 +77,14 @@ class Connection:
             cmd = cmd_split
         else:
             cmd = cmd_string.split(" ")
-        print(f"Running command: {cmd}")
+        print(f"Running command: {' '.join(cmd)}")
         if cmd[0] in self.commands:
             if cmd[0] == "NICK":
                 self.set_nickname(cmd[1])
             elif cmd[0] == "USER":
-                print("detected USER command")
                 if self.nick_set:
                     self.set_realname(cmd[1])
-                    self.cached_command = None
+                    self.cached_command = None # gotta uncache it if it's been cached.
                 else:
                     self.cached_command = cmd
             elif cmd[0] == "QUIT":
@@ -100,7 +98,8 @@ class Connection:
             elif cmd[0] == "LIST":
                 self.list_channels()
         else:
-            print("Unknown command.")
+            print(f"Received unknown command: {cmd}.")
+            self.send_code("421", cmd[0], ":Unknown command")
 
     def set_nickname(self, nickname):
         """Attempts to set a new nickname specified by the cient.
@@ -195,6 +194,7 @@ class Connection:
             msg = f"{self.nickname}!{self.realname}@{self.address} JOIN {chan}"
             self.send_message(socket, msg)
 
+        # none of the channels have a topic leave me alone
         msg = f"332 {chan} :{chan} no topic"
         self.send_message_from_server(msg)
 
@@ -202,11 +202,13 @@ class Connection:
         for socket in self.server_mem.channels[chan]:
             chan_members.append(self.server_mem.clients[socket])
         chan_members = " ".join(chan_members)
-        msg = f"353 {self.nickname} = {chan} :{chan_members}"
-        self.send_message_from_server(msg)
+        msg = f"= {chan} :{chan_members}"
+        code = "353"
+        self.send_code(code, self.nickname, msg)
 
-        msg = f"366 {chan} :End of NAMES list"
-        self.send_message_from_server(msg)
+        msg = ":End of NAMES list"
+        code = "366"
+        self.send_code(code, chan, msg)
 
     def leave_channel(self, chan):
         """Removes a client from a channel.
@@ -223,10 +225,10 @@ class Connection:
                     self.send_message(socket, msg)
             else:
                 msg = ":You're not on that channel."
-                self.send_code("442", self.socket, chan, msg)
+                self.send_code("442", chan, msg)
         else:
             msg = ":No such channel."
-            self.send_code("403", self.socket, chan, msg)
+            self.send_code("403", chan, msg)
 
     def message(self, chan, msg):
         """Sends a message from a user to a channel or another user.
@@ -245,18 +247,18 @@ class Connection:
                 if self.server_mem.clients[client] == chan:
                     self.send_message_from_user(client, msg, chan)
 
-    def send_code(self, code, usr, msg):
+    def send_code(self, code, subj, msg):
         """Sends a numeric reply code code to the client from the server.
 
         Args:
             code (string): The code to be sent (numeric, see IRC documentation https://tools.ietf.org/html/rfc1459)
-            usr (string): The name of the user that the code is being sent to.
+            subj (string): The subject of the code (user, command, channel etc.)
             msg (string): Any additional text to be sent after the code.
         """
 
         self.socket.send(
-            f":{self.server_mem.ipv6_address} {code} {usr} {msg}\r\n".encode())
-        print(f":{self.server_mem.ipv6_address} {code} {usr} {msg}\r\n")
+            f":{self.server_mem.ipv6_address} {code} {subj} {msg}\r\n".encode())
+        print(f":{self.server_mem.ipv6_address} {code} {subj} {msg}\r\n")
 
     def send_message_from_server(self, msg):
         """Sends a message from the server to the client.
