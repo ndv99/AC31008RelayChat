@@ -21,10 +21,11 @@ class Connection:
         self.nickname = ""
         self.realname = ""
 
-        self.nick_set = False
+        self.nick_set = False  # tracks if the nickname has been set for the first time
 
         self.server_mem = mem
 
+        # list of recognised commands
         self.commands = [
             "CAP",
             "NICK",
@@ -38,6 +39,7 @@ class Connection:
             "LIST"
         ]
 
+        # used for caching the USER command when the intial nickname selection fails (invalid nickname)
         self.cached_command = None
 
     def loop(self):
@@ -48,6 +50,7 @@ class Connection:
             while True:
                 msg = self.socket.recv(4096)
                 if msg:
+                    # splits the messages up (they're separated by \r\n)
                     msg = msg.decode().split('\r\n')
 
                     for part in msg:
@@ -57,11 +60,12 @@ class Connection:
                     # So this little bit of code is basically to cache the USER command until the nickname has been verified for the first time.
                     if self.cached_command is not None:
                         self.check_command(None, self.cached_command)
-        except ConnectionResetError:
+        except ConnectionResetError:  # this happens when a client disconnects.
             print("Client disconnected. Connection reset.")
             if self.socket in self.server_mem.clients:
                 del self.server_mem.clients[self.socket]
 
+        # no idea when this happens but I know that it can so better catch it just in case.
         except BrokenPipeError:
             print("Broken pipe (how the fuck did this happen?!)")
 
@@ -78,13 +82,15 @@ class Connection:
         else:
             cmd = cmd_string.split(" ")
         print(f"Running command: {' '.join(cmd)}")
+
         if cmd[0] in self.commands:
             if cmd[0] == "NICK":
                 self.set_nickname(cmd[1])
             elif cmd[0] == "USER":
                 if self.nick_set:
                     self.set_realname(cmd[1])
-                    self.cached_command = None # gotta uncache it if it's been cached.
+                    # gotta uncache it if it's been cached.
+                    self.cached_command = None
                 else:
                     self.cached_command = cmd
             elif cmd[0] == "QUIT":
@@ -98,6 +104,8 @@ class Connection:
             elif cmd[0] == "LIST":
                 self.list_channels()
         else:
+            # not needed for hexchat since it handles that client-side but it's good to have for when ludovic tests this with socat.
+            # any commands that hexchat sends that I don't deal with are just added to self.commands.
             print(f"Received unknown command: {cmd}.")
             self.send_code("421", cmd[0], ":Unknown command")
 
@@ -111,7 +119,8 @@ class Connection:
             bool: True if successful, False if not.
         """
 
-        if len(nickname) > 9 or nickname[0] == "-":
+        # this is just all IRC spec basics
+        if len(nickname) > 9 or nickname[0] == "-" or nickname[0] == "#":
             print("Client tried to connect with invalid username")
             code = "432"
             msg = f":{nickname}"
@@ -154,12 +163,12 @@ class Connection:
         self.realname = name
 
         self.server_mem.clients[self.socket] = self.nickname
-        self.send_welcome_messages()
-    
+        self.send_welcome_messages()  # separated this for atomicity.
+
     def send_welcome_messages(self):
         """Sends welcome messages to the user.
         """
-        
+
         msg = f"Welcome to the Internet Relay Network {self.nickname}!{self.nickname}@{self.address}"
         self.send_code("001", self.nickname, msg)
 
@@ -173,6 +182,8 @@ class Connection:
         self.send_code("004", self.nickname, msg)
 
     def list_channels(self):
+        """Sends a list of channels back to the client.
+        """
         for channel in self.server_mem.channels:
             msg = f"{channel} {len(self.server_mem.channels[channel])} :"
             self.send_code("322", self.nickname, msg)
@@ -186,9 +197,10 @@ class Connection:
             chan (string): The name of the channel.
         """
 
+        # creates the requested channel if it doesn't exist (for some reason)
         if chan not in self.server_mem.channels:
             self.server_mem.channels[chan] = []
-        
+
         self.server_mem.channels[chan].append(self.socket)
         for socket in self.server_mem.channels[chan]:
             msg = f"{self.nickname}!{self.realname}@{self.address} JOIN {chan}"
@@ -241,11 +253,11 @@ class Connection:
         if chan[0] == "#":  # if target is a channel
             for client in self.server_mem.channels[chan]:
                 if client != self.socket:
-                    self.send_message_from_user(client, msg, chan)
+                    self.send_privmsg(client, msg, chan)
         else:  # if target is a user
             for client in self.server_mem.clients:
                 if self.server_mem.clients[client] == chan:
-                    self.send_message_from_user(client, msg, chan)
+                    self.send_privmsg(client, msg, chan)
 
     def send_code(self, code, subj, msg):
         """Sends a numeric reply code code to the client from the server.
@@ -270,7 +282,7 @@ class Connection:
         self.socket.send(f":{self.server_mem.ipv6_address} {msg}\r\n".encode())
         print(f":{self.server_mem.ipv6_address} {msg}\r\n")
 
-    def send_message_from_user(self, sckt, msg, chan):
+    def send_privmsg(self, sckt, msg, chan):
         """Sends a message from the client to another user.
 
         Args:
