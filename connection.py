@@ -241,11 +241,11 @@ class Connection:
         if chan[0] == "#":  # if target is a channel
             for client in self.server_mem.channels[chan]:
                 if client != self.socket:
-                    self.send_message_from_user(client, msg, chan)
+                    self.send_privmsg(client, msg, chan)
         else:  # if target is a user
             for client in self.server_mem.clients:
                 if self.server_mem.clients[client] == chan:
-                    self.send_message_from_user(client, msg, chan)
+                    self.send_privmsg(client, msg, chan)
 
     def send_code(self, code, subj, msg):
         """Sends a numeric reply code code to the client from the server.
@@ -270,7 +270,7 @@ class Connection:
         self.socket.send(f":{self.server_mem.ipv6_address} {msg}\r\n".encode())
         print(f":{self.server_mem.ipv6_address} {msg}\r\n")
 
-    def send_message_from_user(self, sckt, msg, chan):
+    def send_privmsg(self, sckt, msg, chan):
         """Sends a message from the client to another user.
 
         Args:
