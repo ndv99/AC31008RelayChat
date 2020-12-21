@@ -57,6 +57,7 @@ class Bot():
                     if msg[2] in self.channels:
                         if msg[3][1] == "!":
                             print("command")
+                            
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
             sys.exit(0)
