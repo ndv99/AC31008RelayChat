@@ -13,30 +13,53 @@ class Bot():
         self.host = "::1"
         self.port = 6667
 
-        self.channels = {
-
-        }
+        self.channels = []
 
     def connect_to_server(self):
         self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
         self.send_message(f"NICK {self.nickname}")
         self.send_message(f"USER {self.realname} 0 * :realname")
-        self.send_message(f"JOIN #general")
-
-    def listen(self):
-        while True:
+        self.get_channels()
+        self.join_channels()
+    
+    def get_channels(self):
+        self.send_message(f"LIST")
+        list_end = False
+        messages = []
+        
+        while not list_end:
             msg = self.socket.recv(4096)
             if msg:
-                print(msg)
+                msg = msg.decode().split(" ")
+                messages.append(msg)
+                if msg[1] == "323":
+                    list_end = True
+
+        for message in messages:
+            if message[1] == '322':
+                self.channels.append(message[3])
     
-            msg = msg.decode()
-            msg = msg.split(" ")
+    def join_channels(self):
+        for channel in self.channels:
+            self.send_message(f"JOIN {channel}")
 
-            if msg[2] in self.channels:
-                if msg[3][1] == "!":
-                    print("command")
+    def listen(self):
+        try:
+            while True:
+                msg = self.socket.recv(4096)
+                if msg:
+                    print(msg.decode())
+    
+                    msg = msg.decode()
+                    msg = msg.split(" ")
 
+                    if msg[2] in self.channels:
+                        if msg[3][1] == "!":
+                            print("command")
+        except ConnectionResetError:
+            print("The server has closed. Shutting down bot.")
+            sys.exit(0)
 
     def check_for_command(self):
         pass
@@ -53,9 +76,38 @@ class Bot():
     def parse_server_data(self):
         pass
 
+def process_args(arg):
+    """Processes the arguments provided in the terminal.
+
+    Args:
+        arg (string): Should be an IPv6 address
+
+    Returns:
+        bool: True if address is valid, false if address is invalid.
+    """
+
+    try:
+        socket.inet_aton(arg)
+        return True
+    except socket.error:
+        print(
+            "That IP address is not valid. Please provde a valid IP adddress and try again.")
+        return False
 
 
 if __name__ == "__main__":
-    bot = Bot()
-    bot.connect_to_server()
-    bot.listen()
+    try:
+        valid = process_args(sys.argv[1])
+        if valid:
+            bot = Bot()
+        else:
+            sys.exit(1)
+    except IndexError:
+        print("No args given, connecting to default IPv6 address (::1)...")
+        bot = Bot()
+    try:
+        bot.connect_to_server()
+        bot.listen()
+    except ConnectionRefusedError:
+        print("The server is not running. Contact the server owner.")
+        sys.exit(1)
