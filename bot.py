@@ -50,6 +50,13 @@ class Bot():
                 msg = self.socket.recv(4096)
                 if msg:
                     print(msg.decode())
+    
+                    msg = msg.decode()
+                    msg = msg.split(" ")
+
+                    if msg[2] in self.channels:
+                        if msg[3][1] == "!":
+                            print("command")
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
             sys.exit(0)
@@ -62,6 +69,9 @@ class Bot():
 
     def send_message(self, msg):
         self.socket.send(f"{msg}\r\n".encode())
+
+    def send_privmsg(self, target, msg):
+        self.socket.send(f"PRIVMSG {target} :{msg}")
 
     def parse_server_data(self):
         pass
@@ -83,6 +93,7 @@ def process_args(arg):
         print(
             "That IP address is not valid. Please provde a valid IP adddress and try again.")
         return False
+
 
 if __name__ == "__main__":
     try:
