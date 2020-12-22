@@ -26,5 +26,5 @@ The code for the final networks assignment - a basic client and a simplified ser
 
 The bot only has three commands:
 - `!hello` - Greets the user by their nickname and sends them the date and time
-- `!slap` - Slaps the user with a trout (in the face!)
+- `!slap` - Slaps a random user with a trout (in the face!)
 - The bot will respond to private messages with a randomly chosen pun. This may or may not be a computing-related pun.
