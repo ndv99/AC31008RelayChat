@@ -56,10 +56,19 @@ class Bot():
 
                     if msg[2] in self.channels:
                         if msg[3][1] == "!":
-                            print("command")
+                            self.process_message(msg[2], msg[3])
+                            
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
             sys.exit(0)
+
+    def process_message(self, chan, msg):
+        msg = msg.strip()
+
+        if msg == ":!slap":
+            self.send_privmsg(chan, "ow, cheecky bastard")
+        elif msg == ":!hello":
+            self.send_privmsg(chan, "Hello")
 
     def check_for_command(self):
         pass
@@ -71,7 +80,7 @@ class Bot():
         self.socket.send(f"{msg}\r\n".encode())
 
     def send_privmsg(self, target, msg):
-        self.socket.send(f"PRIVMSG {target} :{msg}")
+        self.socket.send(f"PRIVMSG {target} :{msg}".encode())
 
     def parse_server_data(self):
         pass
