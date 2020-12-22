@@ -72,7 +72,7 @@ class Bot():
         msg = msg.strip()
 
         if msg == ":!slap":
-            self.send_privmsg(chan, "ow, cheecky bastard")
+            self.send_privmsg(chan, "https://youtu.be/dtxPp9UOcIc")
         elif msg == ":!hello":
             now = datetime.datetime.now()
             self.send_privmsg(chan, "Hello, the date and time is " + now.strftime("%Y-%m-%d %H:%M:%S"))
