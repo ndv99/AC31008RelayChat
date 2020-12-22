@@ -293,7 +293,6 @@ class Connection:
 
         self.socket.send(
             f":{self.server_mem.ipv6_address} {code} {subj} {msg}\r\n".encode())
-        print(f":{self.server_mem.ipv6_address} {code} {subj} {msg}\r\n")
 
     def send_message_from_server(self, msg):
         """Sends a message from the server to the client.
@@ -303,7 +302,6 @@ class Connection:
         """
 
         self.socket.send(f":{self.server_mem.ipv6_address} {msg}\r\n".encode())
-        print(f":{self.server_mem.ipv6_address} {msg}\r\n")
 
     def send_privmsg(self, sckt, msg, chan):
         """Sends a message from the client to another user.
@@ -316,8 +314,6 @@ class Connection:
 
         sckt.send(
             f":{self.nickname}!{self.realname}@{self.address} PRIVMSG {chan} {msg}\r\n".encode())
-        print(
-            f"from {self.nickname} to {chan}:{self.nickname}!{self.realname}@{self.address} PRIVMSG {chan} {msg}")
 
     def send_message(self, sckt, msg):
         """Sends a message from this socket to another socket. Mainly for debugging.
@@ -328,4 +324,3 @@ class Connection:
         """
 
         sckt.send(f":{msg}\r\n".encode())
-        print(f"sent this:{msg}\r\n")

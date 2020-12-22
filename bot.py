@@ -11,6 +11,7 @@ class Bot():
     def __init__(self):
         self.socket = None
         self.nickname = "IRCBot"
+        self.second_choice = "RealBot"
         self.realname = "IRCBot"
         self.host = "::1"
         self.port = 6667
@@ -43,6 +44,9 @@ class Bot():
         for message in messages:
             if message[1] == '322':
                 self.channels.append(message[3])
+            elif message[1] == '432' or message[1] == '433':
+                self.nickname = self.second_choice
+                self.send_message(f"NICK {self.nickname}")
     
     def join_channels(self):
         for channel in self.channels:
