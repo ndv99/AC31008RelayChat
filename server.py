@@ -9,13 +9,14 @@ from server_mem import Memory
 
 class Server:
     """A generic IRC server.
-
-    Args:
-        ipv6_addr (string): A valid IPv6 address as a string
     """
 
     def __init__(self, ipv6_addr="::1"):
-        """Initialises a Server object."""
+        """Initialises a Server object.
+
+        Args:
+            ipv6_addr (str, optional): A calid IPv6 address on which to host the server. Defaults to "::1".
+        """        
 
         self.memory = Memory(ipv6_addr)
 
@@ -55,7 +56,7 @@ def process_args(arg):
     """
 
     try:
-        socket.inet_aton(arg)
+        socket.inet_pton(socket.AF_INET6, arg)
         return True
     except socket.error:
         print(
@@ -67,7 +68,7 @@ if __name__ == "__main__":
     try:
         valid = process_args(sys.argv[1])
         if valid:
-            server = Server()
+            server = Server(ipv6_addr=sys.argv[1])
         else:
             sys.exit(1)
     except IndexError:
