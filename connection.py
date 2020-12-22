@@ -36,7 +36,8 @@ class Connection:
             "PRIVMSG",
             "WHO",
             "MODE",
-            "LIST"
+            "LIST",
+            "NAMES"
         ]
 
         # used for caching the USER command when the intial nickname selection fails (invalid nickname)
@@ -103,6 +104,9 @@ class Connection:
                 self.leave_channel(cmd[1])
             elif cmd[0] == "LIST":
                 self.list_channels()
+            elif cmd[0] == "NAMES":
+                self.list_channel_nicknames(cmd[1])
+
         else:
             # not needed for hexchat since it handles that client-side but it's good to have for when ludovic tests this with socat.
             # any commands that hexchat sends that I don't deal with are just added to self.commands.
@@ -152,6 +156,19 @@ class Connection:
         self.send_message_from_server(msg)
         self.server_mem.clients[self.socket] = self.nickname
         return True
+    
+    def list_channel_nicknames(self, chan):
+        chan_members = []
+        for socket in self.server_mem.channels[chan]:
+            chan_members.append(self.server_mem.clients[socket])
+        chan_members = " ".join(chan_members)
+        msg = f"= {chan} :{chan_members}"
+        code = "353"
+        self.send_code(code, self.nickname, msg)
+
+        msg = ":End of NAMES list"
+        code = "366"
+        self.send_code(code, chan, msg)
 
     def set_realname(self, name):
         """Sets the real name (username) of the client. Welcomes the client since username can only be set upon login.
