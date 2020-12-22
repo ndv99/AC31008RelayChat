@@ -66,13 +66,14 @@ class Bot():
                                 print("Channel is in channels")
                                 print(f"Message: {msg[3]}")
                                 if msg[3][1] == "!":
-                                    self.process_message(msg[2], msg[3])
+                                    nickname = msg[0].split("!")[0][1:]
+                                    self.process_message(msg[2], msg[3], nickname)
                             
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
             sys.exit(0)
 
-    def process_message(self, chan, msg):
+    def process_message(self, chan, msg, nick):
         msg = msg.strip()
         print(chan.encode())
 
@@ -80,7 +81,7 @@ class Bot():
             self.slap(chan)
         elif msg == ":!hello":
             now = datetime.datetime.now()
-            message = f":Hello, the date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}"
+            message = f"Hello {nick}, the date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}"
             self.send_privmsg(chan, message)
     
     def slap(self, chan):
