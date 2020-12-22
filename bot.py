@@ -3,6 +3,7 @@ import random
 import sys
 import string
 import datetime
+import puns
 
 class Bot():
     """An implementation of Client as a bot to perform commands from users at runtime."""
@@ -68,7 +69,9 @@ class Bot():
                                 if msg[3][1] == "!":
                                     nickname = msg[0].split("!")[0][1:]
                                     self.process_message(msg[2], msg[3], nickname)
-                            
+                                else  
+                                    pun = puns.puns[random.randint(0, len(puns.puns)-1)]
+                                    self.send_privmsg(msg[2], pun)
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
             sys.exit(0)
@@ -83,7 +86,7 @@ class Bot():
             now = datetime.datetime.now()
             message = f"Hello {nick}, the date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}"
             self.send_privmsg(chan, message)
-    
+   
     def slap(self, chan):
         nicks = self.get_nicks(chan)
         to_slap = random.randint(0, len(nicks)-1)
