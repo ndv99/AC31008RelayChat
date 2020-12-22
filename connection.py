@@ -63,8 +63,7 @@ class Connection:
                         self.check_command(None, self.cached_command)
         except ConnectionResetError:  # this happens when a client disconnects.
             print("Client disconnected. Connection reset.")
-            if self.socket in self.server_mem.clients:
-                del self.server_mem.clients[self.socket]
+            self.disconnect()
 
         # no idea when this happens but I know that it can so better catch it just in case.
         except BrokenPipeError:
@@ -95,7 +94,7 @@ class Connection:
                 else:
                     self.cached_command = cmd
             elif cmd[0] == "QUIT":
-                del self.server_mem.clients[self.socket]
+                self.disconnect()
             elif cmd[0] == "JOIN":
                 self.join_channel(cmd[1])
             elif cmd[0] == "PRIVMSG":
@@ -112,6 +111,13 @@ class Connection:
             # any commands that hexchat sends that I don't deal with are just added to self.commands.
             print(f"Received unknown command: {cmd}.")
             self.send_code("421", cmd[0], ":Unknown command")
+    
+    def disconnect(self):
+        if self.socket in self.server_mem.clients:
+            del self.server_mem.clients[self.socket]
+        for channel in self.server_mem.channels:
+            if self.socket in self.server_mem.channels[channel]:
+                self.server_mem.channels[channel].remove(self.socket)
 
     def set_nickname(self, nickname):
         """Attempts to set a new nickname specified by the cient.
