@@ -29,10 +29,9 @@ class Bot:
         """        
         self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
-        print("connected")
+        print(f"Connected to {self.host}/{self.port}")
         self.send_message(f"NICK {self.nickname}")
         self.send_message(f"USER {self.realname} 0 * :realname")
-        print("sent nick and user")
         self.check_nickname()
         self.get_channels()
         self.join_channels()
@@ -79,7 +78,6 @@ class Bot:
                             list_end = True
 
         for message in messages:
-            print(message)
             if message[1] == '322':
                 self.channels.append(message[3])
     
@@ -97,12 +95,10 @@ class Bot:
             while True:
                 data = self.socket.recv(4096)
                 if data:
-                    print(data.decode())
     
                     parts = data.decode().split('\r\n')
                     for part in parts:
                         msg = part.split(" ")
-                        print(msg)
                         if len(msg) > 3:
                             if msg[1] == "PRIVMSG":
                                 if msg[2] in self.channels:
@@ -131,10 +127,20 @@ class Bot:
         if msg == ":!slap":
             self.slap(chan)
         elif msg == ":!hello":
-            now = datetime.datetime.now()
-            message = f"Hello {nick}, the date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}"
-            self.send_privmsg(chan, message)
-   
+            self.greet(chan, nick)
+
+    def greet(self, chan, nick):
+        """Greets the sender with the date and time
+
+        Args:
+            chan (str): The channel that the command was sent on
+            nick (str): The nickname of the sender of the command
+        """     
+        now = datetime.datetime.now()
+        message = f"Hello {nick}, the date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}"
+        print(f"Greeting {nick}")
+        self.send_privmsg(chan, message)
+
     def slap(self, chan):
         """Slaps a random user with a trout (in the face!)
 
@@ -143,7 +149,7 @@ class Bot:
         """        
         nicks = self.get_nicks(chan)
         to_slap = random.randint(0, len(nicks)-1)
-        print("Slapping user")
+        print(f"Slapping {nicks[to_slap]}")
         self.send_privmsg(chan, f"Oi. {nicks[to_slap]}. https://youtu.be/dtxPp9UOcIc")
 
     def get_nicks(self, chan):
