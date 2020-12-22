@@ -34,14 +34,12 @@ class Bot():
             if msg:
                 msg = msg.decode().split('\r\n')
                 for part in msg:
-                    print(part)
                     if part:
                         messages.append(part.split(" "))
                         if part.split(" ")[1] == "323":
                             list_end = True
-        print("")
+
         for message in messages:
-            print(message)
             if message[1] == '322':
                 self.channels.append(message[3])
     
@@ -79,12 +77,39 @@ class Bot():
         print(chan.encode())
 
         if msg == ":!slap":
-            print("Slapping user")
-            self.send_privmsg(chan, "https://youtu.be/dtxPp9UOcIc")
+            self.slap(chan)
         elif msg == ":!hello":
             now = datetime.datetime.now()
             message = f":Hello, the date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}"
             self.send_privmsg(chan, message)
+    
+    def slap(self, chan):
+        nicks = self.get_nicks(chan)
+        to_slap = random.randint(0, len(nicks)-1)
+        print("Slapping user")
+        self.send_privmsg(chan, f"Oi. {nicks[to_slap]}. https://youtu.be/dtxPp9UOcIc")
+
+    def get_nicks(self, chan):
+        self.send_message(f"NAMES {chan}")
+        list_end = False
+        messages = []
+        
+        while not list_end:
+            msg = self.socket.recv(4096)
+            if msg:
+                msg = msg.decode().split('\r\n')
+                for part in msg:
+                    if part:
+                        messages.append(part.split(" "))
+                        if part.split(" ")[1] == "366":
+                            list_end = True
+        nicknames = []
+
+        for message in messages:
+            if message[1] == '353':
+                message[5] = message[5][1:]
+                nicknames = (message[5:])
+        return nicknames
 
     def check_for_command(self):
         pass
