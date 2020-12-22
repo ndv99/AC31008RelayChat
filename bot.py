@@ -3,6 +3,7 @@ import random
 import sys
 import string
 import datetime
+import puns
 
 class Bot():
     """An implementation of Client as a bot to perform commands from users at runtime."""
@@ -60,22 +61,22 @@ class Bot():
                         msg = part.split(" ")
                         print(msg)
                         if len(msg) > 3:
-                            print(f"msg[2]: {msg[2]}")
-                            print(f"Channels: {self.channels}")
-                            if msg[2] in self.channels:
-                                print("Channel is in channels")
-                                print(f"Message: {msg[3]}")
-                                if msg[3][1] == "!":
+                            if msg[1] == "PRIVMSG":
+                                if msg[2] in self.channels:
+                                    if msg[3][1] == "!":
+                                        nickname = msg[0].split("!")[0][1:]
+                                        self.process_message(msg[2], msg[3], nickname)
+                                else:
+                                    pun = puns.puns[random.randint(0, len(puns.puns)-1)]
                                     nickname = msg[0].split("!")[0][1:]
-                                    self.process_message(msg[2], msg[3], nickname)
-                            
+                                    self.send_privmsg(nickname, pun)
+
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
             sys.exit(0)
 
     def process_message(self, chan, msg, nick):
         msg = msg.strip()
-        print(chan.encode())
 
         if msg == ":!slap":
             self.slap(chan)
@@ -83,7 +84,7 @@ class Bot():
             now = datetime.datetime.now()
             message = f"Hello {nick}, the date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}"
             self.send_privmsg(chan, message)
-    
+   
     def slap(self, chan):
         nicks = self.get_nicks(chan)
         to_slap = random.randint(0, len(nicks)-1)
@@ -112,20 +113,11 @@ class Bot():
                 nicknames = (message[5:])
         return nicknames
 
-    def check_for_command(self):
-        pass
-
-    def reply(self):
-        pass
-
     def send_message(self, msg):
         self.socket.send(f"{msg}\r\n".encode())
 
     def send_privmsg(self, target, msg):
         self.socket.send(f"PRIVMSG {target} :{msg}\r\n".encode())
-
-    def parse_server_data(self):
-        pass
 
 def process_args(arg):
     """Processes the arguments provided in the terminal.
