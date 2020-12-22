@@ -56,11 +56,19 @@ class Bot():
 
                     if msg[2] in self.channels:
                         if msg[3][1] == "!":
-                            print("command")
+                            self.process_message(msg[3])
                             
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
             sys.exit(0)
+
+    def process_message(self, msg):
+        msg = msg.strip()
+
+        if msg == ":!slap":
+            print("ow, cheeky bastard")
+        elif msg == ":!hello":
+            print("aight big lad")
 
     def check_for_command(self):
         pass
