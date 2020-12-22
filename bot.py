@@ -2,6 +2,7 @@ import socket
 import random
 import sys
 import string
+import datetime
 
 class Bot():
     """An implementation of Client as a bot to perform commands from users at runtime."""
@@ -68,7 +69,8 @@ class Bot():
         if msg == ":!slap":
             self.send_privmsg(chan, "ow, cheecky bastard")
         elif msg == ":!hello":
-            self.send_privmsg(chan, "Hello")
+            now = datetime.datetime.now()
+            self.send_privmsg(chan, "Hello, the date and time is " + now.strftime("%Y-%m-%d %H:%M:%S"))
 
     def check_for_command(self):
         pass
