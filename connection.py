@@ -22,6 +22,7 @@ class Connection:
         self.realname = ""
 
         self.nick_set = False  # tracks if the nickname has been set for the first time
+        self.registered = False
 
         self.server_mem = mem
 
@@ -85,26 +86,50 @@ class Connection:
 
         if cmd[0] in self.commands:
             if cmd[0] == "NICK":
-                self.set_nickname(cmd[1])
+                if len(cmd) > 1:
+                    self.set_nickname(cmd[1])
+                else:
+                    self.send_code("431", "NICK", ":No nickname given")
             elif cmd[0] == "USER":
                 if self.nick_set:
-                    self.set_realname(cmd[1])
-                    # gotta uncache it if it's been cached.
-                    self.cached_command = None
+                    if len(cmd) > 1:
+                        if not self.registered:
+                            self.set_realname(cmd[1])
+                            # gotta uncache it if it's been cached.
+                            self.cached_command = None
+                            self.registered = True
+                        else:
+                            self.send_code("426", "USER", ":Unauthorized command (already registered)")
+                    else:
+                        self.send_code("461", "USER", ":Need more params")
                 else:
                     self.cached_command = cmd
             elif cmd[0] == "QUIT":
                 self.disconnect()
             elif cmd[0] == "JOIN":
-                self.join_channel(cmd[1])
+                if len(cmd) > 1:
+                    self.join_channel(cmd[1])
+                else:
+                    self.send_code("461", "JOIN", ":Need more params")
             elif cmd[0] == "PRIVMSG":
-                self.message(cmd[1], " ".join(cmd[2:]))
+                if len(cmd) > 2:
+                    self.message(cmd[1], " ".join(cmd[2:]))
+                elif len(cmd) == 2:
+                    self.send_code("412", "PRIVMSG", ":No text to send")
+                else:
+                    self.send_code("411", "PRIVMSG", ":No recipient")
             elif cmd[0] == "PART":
-                self.leave_channel(cmd[1])
+                if len(cmd) > 1:
+                    self.leave_channel(cmd[1])
+                else:
+                    self.send_code("461", "JOIN", ":Need more params")
             elif cmd[0] == "LIST":
                 self.list_channels()
             elif cmd[0] == "NAMES":
-                self.list_channel_nicknames(cmd[1])
+                if len(cmd) > 1:
+                    self.list_channel_nicknames(cmd[1])
+                else:
+                    self.send_code("461", "JOIN", ":Need more params")
 
         else:
             # not needed for hexchat since it handles that client-side but it's good to have for when ludovic tests this with socat.
@@ -233,17 +258,7 @@ class Connection:
         msg = f"332 {chan} :{chan} no topic"
         self.send_message_from_server(msg)
 
-        chan_members = []
-        for socket in self.server_mem.channels[chan]:
-            chan_members.append(self.server_mem.clients[socket])
-        chan_members = " ".join(chan_members)
-        msg = f"= {chan} :{chan_members}"
-        code = "353"
-        self.send_code(code, self.nickname, msg)
-
-        msg = ":End of NAMES list"
-        code = "366"
-        self.send_code(code, chan, msg)
+        self.list_channel_nicknames(chan)
 
     def leave_channel(self, chan):
         """Removes a client from a channel.
@@ -278,9 +293,14 @@ class Connection:
                 if client != self.socket:
                     self.send_privmsg(client, msg, chan)
         else:  # if target is a user
+            found = False
             for client in self.server_mem.clients:
                 if self.server_mem.clients[client] == chan:
                     self.send_privmsg(client, msg, chan)
+                    found = True
+            
+            if not found:
+                self.send_code("401", chan, ":No such nick/channel")
 
     def send_code(self, code, subj, msg):
         """Sends a numeric reply code code to the client from the server.
@@ -293,6 +313,7 @@ class Connection:
 
         self.socket.send(
             f":{self.server_mem.ipv6_address} {code} {subj} {msg}\r\n".encode())
+        print(f"Sent code :{self.server_mem.ipv6_address} {code} {subj} {msg}")
 
     def send_message_from_server(self, msg):
         """Sends a message from the server to the client.
