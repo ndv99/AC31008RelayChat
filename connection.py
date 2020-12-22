@@ -138,6 +138,8 @@ class Connection:
             self.send_code("421", cmd[0], ":Unknown command")
     
     def disconnect(self):
+        """Disconnects the user from the server cleanly.
+        """        
         if self.socket in self.server_mem.clients:
             del self.server_mem.clients[self.socket]
         for channel in self.server_mem.channels:
@@ -189,6 +191,11 @@ class Connection:
         return True
     
     def list_channel_nicknames(self, chan):
+        """Sends the client a list of all nicknames in the channel.
+
+        Args:
+            chan (string): The channel in question.
+        """        
         chan_members = []
         for socket in self.server_mem.channels[chan]:
             chan_members.append(self.server_mem.clients[socket])

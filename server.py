@@ -9,13 +9,14 @@ from server_mem import Memory
 
 class Server:
     """A generic IRC server.
-
-    Args:
-        ipv6_addr (string): A valid IPv6 address as a string
     """
 
     def __init__(self, ipv6_addr="::1"):
-        """Initialises a Server object."""
+        """Initialises a Server object.
+
+        Args:
+            ipv6_addr (str, optional): A calid IPv6 address on which to host the server. Defaults to "::1".
+        """        
 
         self.memory = Memory(ipv6_addr)
 
