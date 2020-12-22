@@ -21,11 +21,36 @@ class Bot():
     def connect_to_server(self):
         self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
+        print("connected")
         self.send_message(f"NICK {self.nickname}")
         self.send_message(f"USER {self.realname} 0 * :realname")
+        print("sent nick and user")
+        self.check_nickname()
         self.get_channels()
         self.join_channels()
     
+    def check_nickname(self):
+        list_end = False
+        messages = []
+
+        attempts = 1
+        while not list_end:
+            msg = self.socket.recv(4096)
+            if msg:
+                msg = msg.decode().split('\r\n')
+                for part in msg:
+                    if part:
+                        if part.split(" ")[1] == '432' or part.split(" ")[1] == '433':
+                            if attempts == 1:
+                                self.nickname = self.second_choice
+                                self.send_message(f"NICK {self.nickname}")
+                                attempts += 1
+                            else:
+                                print("Built-in nickname options exhausted. Enter a different nickname in self.nickname.")
+                                sys.exit(0)
+                        elif part.split(" ")[1] == "001":
+                            list_end = True
+
     def get_channels(self):
         self.send_message(f"LIST")
         list_end = False
@@ -42,11 +67,9 @@ class Bot():
                             list_end = True
 
         for message in messages:
+            print(message)
             if message[1] == '322':
                 self.channels.append(message[3])
-            elif message[1] == '432' or message[1] == '433':
-                self.nickname = self.second_choice
-                self.send_message(f"NICK {self.nickname}")
     
     def join_channels(self):
         for channel in self.channels:
