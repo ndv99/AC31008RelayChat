@@ -117,7 +117,7 @@ class Connection:
             del self.server_mem.clients[self.socket]
         for channel in self.server_mem.channels:
             if self.socket in self.server_mem.channels[channel]:
-                self.server_mem.channels[channel].remove(self.socket)
+                self.leave_channel(channel)
 
     def set_nickname(self, nickname):
         """Attempts to set a new nickname specified by the cient.
