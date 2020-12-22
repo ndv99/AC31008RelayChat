@@ -134,3 +134,6 @@ dmypy.json
 
 # editors
 .vscode
+
+# my crash course for the guys
+crashcourse.py
