@@ -48,21 +48,27 @@ class Bot():
     def join_channels(self):
         for channel in self.channels:
             self.send_message(f"JOIN {channel}")
+        self.send_message(f"PRIVMSG #test :Hello everyone!")
 
     def listen(self):
         try:
             while True:
-                msg = self.socket.recv(4096)
-                if msg:
-                    print(msg.decode())
+                data = self.socket.recv(4096)
+                if data:
+                    print(data.decode())
     
-                    msg = msg.decode()
-                    msg = msg.split(" ")
-                    
-                    if len(msg) > 3:
-                        if msg[2] in self.channels:
-                            if msg[3][1] == "!":
-                                self.process_message(msg[2], msg[3])
+                    parts = data.decode().split('\r\n')
+                    for part in parts:
+                        msg = part.split(" ")
+                        print(msg)
+                        if len(msg) > 3:
+                            print(f"msg[2]: {msg[2]}")
+                            print(f"Channels: {self.channels}")
+                            if msg[2] in self.channels:
+                                print("Channel is in channels")
+                                print(f"Message: {msg[3]}")
+                                if msg[3][1] == "!":
+                                    self.process_message(msg[2], msg[3])
                             
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
@@ -70,12 +76,15 @@ class Bot():
 
     def process_message(self, chan, msg):
         msg = msg.strip()
+        print(chan.encode())
 
         if msg == ":!slap":
+            print("Slapping user")
             self.send_privmsg(chan, "https://youtu.be/dtxPp9UOcIc")
         elif msg == ":!hello":
             now = datetime.datetime.now()
-            self.send_privmsg(chan, "Hello, the date and time is " + now.strftime("%Y-%m-%d %H:%M:%S"))
+            message = f":Hello, the date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}"
+            self.send_privmsg(chan, message)
 
     def check_for_command(self):
         pass
@@ -87,7 +96,7 @@ class Bot():
         self.socket.send(f"{msg}\r\n".encode())
 
     def send_privmsg(self, target, msg):
-        self.socket.send(f"PRIVMSG {target} :{msg}".encode())
+        self.socket.send(f"PRIVMSG {target} :{msg}\r\n".encode())
 
     def parse_server_data(self):
         pass
