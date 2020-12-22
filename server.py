@@ -55,7 +55,7 @@ def process_args(arg):
     """
 
     try:
-        socket.inet_aton(arg)
+        socket.inet_pton(socket.AF_INET6, arg)
         return True
     except socket.error:
         print(
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     try:
         valid = process_args(sys.argv[1])
         if valid:
-            server = Server()
+            server = Server(ipv6_addr=sys.argv[1])
         else:
             sys.exit(1)
     except IndexError:

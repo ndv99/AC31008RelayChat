@@ -8,12 +8,12 @@ import puns
 class Bot():
     """An implementation of Client as a bot to perform commands from users at runtime."""
 
-    def __init__(self):
+    def __init__(self, ipv6_addr="::1"):
         self.socket = None
         self.nickname = "IRCBot"
         self.second_choice = "RealBot"
         self.realname = "IRCBot"
-        self.host = "::1"
+        self.host = ipv6_addr
         self.port = 6667
 
         self.channels = []
@@ -157,7 +157,7 @@ def process_args(arg):
     """
 
     try:
-        socket.inet_aton(arg)
+        socket.inet_pton(socket.AF_INET6, arg)
         return True
     except socket.error:
         print(
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     try:
         valid = process_args(sys.argv[1])
         if valid:
-            bot = Bot()
+            bot = Bot(sys.argv[1])
         else:
             sys.exit(1)
     except IndexError:
