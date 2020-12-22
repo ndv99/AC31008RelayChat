@@ -31,12 +31,16 @@ class Bot():
         while not list_end:
             msg = self.socket.recv(4096)
             if msg:
-                msg = msg.decode().split(" ")
-                messages.append(msg)
-                if msg[1] == "323":
-                    list_end = True
-
+                msg = msg.decode().split('\r\n')
+                for part in msg:
+                    print(part)
+                    if part:
+                        messages.append(part.split(" "))
+                        if part.split(" ")[1] == "323":
+                            list_end = True
+        print("")
         for message in messages:
+            print(message)
             if message[1] == '322':
                 self.channels.append(message[3])
     
@@ -53,10 +57,11 @@ class Bot():
     
                     msg = msg.decode()
                     msg = msg.split(" ")
-
-                    if msg[2] in self.channels:
-                        if msg[3][1] == "!":
-                            self.process_message(msg[2], msg[3])
+                    
+                    if len(msg) > 3:
+                        if msg[2] in self.channels:
+                            if msg[3][1] == "!":
+                                self.process_message(msg[2], msg[3])
                             
         except ConnectionResetError:
             print("The server has closed. Shutting down bot.")
